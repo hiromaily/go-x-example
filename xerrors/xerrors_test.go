@@ -9,6 +9,7 @@ import (
 )
 
 //https://godoc.org/golang.org/x/xerrors
+//https://qiita.com/sonatard/items/9c9faf79ac03c20f4ae1
 
 func TestXerrors(t *testing.T) {
 	// New
