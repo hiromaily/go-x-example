@@ -9,9 +9,10 @@ import (
 )
 
 func TestCrypto(t *testing.T) {
-	fmt.Print("パスワード > ")
+	//This code doesn't run from test, it should run as main func
+	fmt.Print("password > ")
 
-	psw, _ := terminal.ReadPassword(int(syscall.Stdin))
+	password, _ := terminal.ReadPassword(int(syscall.Stdin))
 
-	fmt.Println(psw)
+	fmt.Println(string(password))
 }
