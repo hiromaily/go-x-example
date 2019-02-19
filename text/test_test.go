@@ -3,6 +3,7 @@ package text_test
 import (
 	"testing"
 
+	//"golang.org/x/text/currency"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -21,6 +22,11 @@ func TestMessageFormat(t *testing.T) {
 
 	p = message.NewPrinter(message.MatchLanguage("ja"))
 	p.Println(123456.78) // Prints 123,456.78
+
+	//この方法はカンマが表示されない
+	//p = message.NewPrinter(language.Japanese)
+	//cur, _ := currency.FromTag(language.Japanese)
+	//p.Printf("%d\n", currency.NarrowSymbol(cur.Amount(120000.0)))
 }
 
 func TestMessageTranslation(t *testing.T) {
@@ -31,4 +37,5 @@ func TestMessageTranslation(t *testing.T) {
 	p = message.NewPrinter(language.German)
 	p.Printf("archive(noun)\n") // Prints "Archiv"
 	p.Printf("archive(verb)\n") // Prints "archivieren"
+
 }
