@@ -8,6 +8,8 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+//https://godoc.org/golang.org/x/crypto/ssh/terminal
+
 func TestCrypto(t *testing.T) {
 	//This code doesn't run from test, it should run as main func
 	fmt.Print("password > ")
