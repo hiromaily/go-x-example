@@ -1,4 +1,4 @@
-package hash_test
+package bcrypt_test
 
 import (
 	"fmt"
