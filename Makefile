@@ -7,3 +7,6 @@ test-eg:
 
 test-eg2:
 	go test -v -run=Parallel ./sync/...
+
+test-eg3:
+	go test -v -run=ParallelWithTimeout ./sync/...

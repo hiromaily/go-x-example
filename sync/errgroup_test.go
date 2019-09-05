@@ -24,18 +24,22 @@ var urls = []string{
 
 func TestErrorGroup(t *testing.T) {
 
+	fn := func(url string) error {
+		// Fetch the URL.
+		resp, err := http.Get(url)
+		if err == nil {
+			resp.Body.Close()
+		} else {
+			fmt.Printf("url: %s, error: %v\n", url, err)
+		}
+		return err
+	}
+
 	func() {
 		defer tm.Track(time.Now(), "run without errgroup")
 		for _, url := range urls {
-			// Launch a goroutine to fetch the URL.
-			url := url // https://golang.org/doc/faq#closures_and_goroutines
 			// Fetch the URL.
-			resp, err := http.Get(url)
-			if err == nil {
-				resp.Body.Close()
-			} else {
-				fmt.Printf("url: %s, error: %v\n", url, err)
-			}
+			fn(url)
 		}
 	}()
 
@@ -46,14 +50,7 @@ func TestErrorGroup(t *testing.T) {
 			// Launch a goroutine to fetch the URL.
 			url := url // https://golang.org/doc/faq#closures_and_goroutines
 			g.Go(func() error {
-				// Fetch the URL.
-				resp, err := http.Get(url)
-				if err == nil {
-					resp.Body.Close()
-				} else {
-					fmt.Printf("url: %s, error: %v\n", url, err)
-				}
-				return err
+				return fn(url)
 			})
 		}
 		// Wait for all HTTP fetches to complete.
@@ -64,58 +61,54 @@ func TestErrorGroup(t *testing.T) {
 }
 
 func TestParallel(t *testing.T) {
-	//func() {
-	//	defer tm.Track(time.Now(), "run parallel without timeout")
-	//	g, _ := errgroup.WithContext(context.Background())
-	//	results := make([]string, len(urls))
-	//
-	//	for idx, url := range urls {
-	//		// Launch a goroutine to fetch the URL.
-	//		idx, url := idx, url // https://golang.org/doc/faq#closures_and_goroutines
-	//		g.Go(func() error {
-	//			// Fetch the URL.
-	//			resp, err := http.Get(url)
-	//			if err == nil {
-	//				resp.Body.Close()
-	//				results[idx] = fmt.Sprintf("url: %s is OK", url)
-	//			} else {
-	//				results[idx] = fmt.Sprintf("url: %s is Failed", url)
-	//			}
-	//			return err
-	//		})
-	//	}
-	//	// Wait for all HTTP fetches to complete.
-	//	if err := g.Wait(); err == nil {
-	//		fmt.Println("Successfully fetched all URLs.")
-	//	}
-	//
-	//	for _, result := range results {
-	//		fmt.Println(result)
-	//	}
-	//}()
+
+	fn := func(idx int, url string) error {
+		// Fetch the URL.
+		resp, err := http.Get(fmt.Sprintf("%s?123", url))
+		if err == nil {
+			resp.Body.Close()
+			fmt.Printf("[%d]url: %s is OK\n", idx, url)
+		} else {
+			fmt.Printf("[%d]url: %s is Failed\n", idx, url)
+		}
+		return err
+	}
 
 	func() {
-		defer tm.Track(time.Now(), "run parallel with timeout")
-
-		timeoutCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-
-		g, _ := errgroup.WithContext(timeoutCtx)
-
-		// wait timeout
-		go func() {
-			select {
-			case <-timeoutCtx.Done():
-				fmt.Println("timeout")
-				// FIXME: cancel() doesn't cancel rest of working goroutne
-				cancel()
-				return
-			}
-		}()
+		defer tm.Track(time.Now(), "run parallel without timeout")
+		g, _ := errgroup.WithContext(context.Background())
+		results := make([]string, len(urls))
 
 		for idx, url := range urls {
 			// Launch a goroutine to fetch the URL.
 			idx, url := idx, url // https://golang.org/doc/faq#closures_and_goroutines
 			g.Go(func() error {
+				return fn(idx, url)
+			})
+		}
+		// Wait for all HTTP fetches to complete.
+		if err := g.Wait(); err == nil {
+			fmt.Println("Successfully fetched all URLs.")
+		}
+
+		for _, result := range results {
+			fmt.Println(result)
+		}
+	}()
+}
+
+//FIXME: timeout doesn't work yet
+func TestParallelWithTimeout(t *testing.T) {
+	defer tm.Track(time.Now(), "run parallel with timeout")
+
+	fn := func(ctx context.Context, eg *errgroup.Group, idx int, url string) {
+		eg.Go(func() error {
+			select {
+			case <-ctx.Done():
+				// abort on context cancel
+				fmt.Println("timeout")
+				return nil
+			default:
 				// Fetch the URL.
 				resp, err := http.Get(fmt.Sprintf("%s?123", url))
 				if err == nil {
@@ -125,11 +118,36 @@ func TestParallel(t *testing.T) {
 					fmt.Printf("[%d]url: %s is Failed\n", idx, url)
 				}
 				return err
-			})
-		}
-		// Wait for all HTTP fetches to complete.
-		if err := g.Wait(); err == nil {
-			fmt.Println("Successfully fetched all URLs.")
-		}
-	}()
+			}
+		})
+	}
+
+	g, egCtx := errgroup.WithContext(context.Background())
+	timeoutCtx, cancel := context.WithTimeout(egCtx, 500*time.Millisecond)
+	defer cancel()
+
+	// wait timeout
+	// if timeout is used, g.Wait() may not be compatible
+	//go func() {
+	//	select {
+	//	case <-timeoutCtx.Done():
+	//		fmt.Println("timeout")
+	//		// FIXME: cancel() doesn't cancel rest of working goroutne
+	//		cancel()
+	//		return
+	//	}
+	//}()
+
+	for idx, url := range urls {
+		// Launch a goroutine to fetch the URL.
+		//idx, url := idx, url // https://golang.org/doc/faq#closures_and_goroutines
+		//g.Go(func() error {
+		//	return fn(idx, url)
+		//})
+		fn(timeoutCtx, g, idx, url)
+	}
+	// Wait for all HTTP fetches to complete.
+	if err := g.Wait(); err == nil {
+		fmt.Println("Successfully fetched all URLs.")
+	}
 }
