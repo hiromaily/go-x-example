@@ -1,4 +1,4 @@
-package semaphore_test
+package sync_test
 
 import (
 	"context"

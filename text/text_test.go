@@ -2,7 +2,6 @@ package text_test
 
 import (
 	"testing"
-
 	//"golang.org/x/text/currency"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
