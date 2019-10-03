@@ -62,7 +62,7 @@ func TestErrorGroup(t *testing.T) {
 	}()
 }
 
-func TestErrGroupWithSemaphone(t *testing.T){
+func TestErrGroupWithSemaphone(t *testing.T) {
 	defer tm.Track(time.Now(), "run errgroup with Semaphone")
 
 	const maxWorkers = 10
@@ -85,12 +85,10 @@ func TestErrGroupWithSemaphone(t *testing.T){
 		// Launch a goroutine to fetch the URL.
 		url := url // https://golang.org/doc/faq#closures_and_goroutines
 		g.Go(func() error {
-			err := sem.Acquire(ctx, 1)
-			if err != nil {
+			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
 			}
 			defer sem.Release(1)
-
 			return fn(url)
 		})
 	}
