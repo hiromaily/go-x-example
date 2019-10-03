@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
 	tm "github.com/hiromaily/golibs/time"
 )
@@ -23,7 +24,7 @@ var urls = []string{
 }
 
 func TestErrorGroup(t *testing.T) {
-
+	//common func
 	fn := func(url string) error {
 		// Fetch the URL.
 		resp, err := http.Get(url)
@@ -34,7 +35,7 @@ func TestErrorGroup(t *testing.T) {
 		}
 		return err
 	}
-
+	//without errgroup.Group
 	func() {
 		defer tm.Track(time.Now(), "run without errgroup")
 		for _, url := range urls {
@@ -43,6 +44,7 @@ func TestErrorGroup(t *testing.T) {
 		}
 	}()
 
+	//with errgroup.Group
 	func() {
 		defer tm.Track(time.Now(), "run with errgroup")
 		var g errgroup.Group
@@ -60,8 +62,46 @@ func TestErrorGroup(t *testing.T) {
 	}()
 }
 
-func TestParallel(t *testing.T) {
+func TestErrGroupWithSemaphone(t *testing.T){
+	defer tm.Track(time.Now(), "run errgroup with Semaphone")
 
+	const maxWorkers = 10
+	sem := semaphore.NewWeighted(maxWorkers)
+	g, ctx := errgroup.WithContext(context.Background())
+
+	//common func
+	fn := func(url string) error {
+		// Fetch the URL.
+		resp, err := http.Get(url)
+		if err == nil {
+			resp.Body.Close()
+		} else {
+			fmt.Printf("url: %s, error: %v\n", url, err)
+		}
+		return err
+	}
+
+	for _, url := range urls {
+		// Launch a goroutine to fetch the URL.
+		url := url // https://golang.org/doc/faq#closures_and_goroutines
+		g.Go(func() error {
+			err := sem.Acquire(ctx, 1)
+			if err != nil {
+				return err
+			}
+			defer sem.Release(1)
+
+			return fn(url)
+		})
+	}
+	// Wait for all HTTP fetches to complete.
+	if err := g.Wait(); err == nil {
+		fmt.Println("Successfully fetched all URLs.")
+	}
+}
+
+func TestParallel(t *testing.T) {
+	//common func
 	fn := func(idx int, url string) error {
 		// Fetch the URL.
 		resp, err := http.Get(fmt.Sprintf("%s?123", url))
@@ -74,6 +114,7 @@ func TestParallel(t *testing.T) {
 		return err
 	}
 
+	//with errgroup.Group with context
 	func() {
 		defer tm.Track(time.Now(), "run parallel without timeout")
 		g, _ := errgroup.WithContext(context.Background())
