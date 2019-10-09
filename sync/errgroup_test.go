@@ -62,6 +62,7 @@ func TestErrorGroup(t *testing.T) {
 	}()
 }
 
+// This is often used
 func TestErrGroupWithSemaphone(t *testing.T) {
 	defer tm.Track(time.Now(), "run errgroup with Semaphone")
 
@@ -84,10 +85,10 @@ func TestErrGroupWithSemaphone(t *testing.T) {
 	for _, url := range urls {
 		// Launch a goroutine to fetch the URL.
 		url := url // https://golang.org/doc/faq#closures_and_goroutines
+		if err := sem.Acquire(ctx, 1); err != nil {
+			break
+		}
 		g.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
 			defer sem.Release(1)
 			return fn(url)
 		})
