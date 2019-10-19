@@ -12,15 +12,23 @@ import (
 
 func TestMessageFormat(t *testing.T) {
 	p := message.NewPrinter(message.MatchLanguage("en"))
-	p.Println(123456.78) // Prints 123,456.78
+	if _, err := p.Println(123456.78); err != nil {
+		t.Fatalf("fail to call p.Println(123456.78) %v", err)
+	} // Prints 123,456.78
 
-	p.Printf("%d ducks in a row\n", 4331) // Prints 4,331 ducks in a row
+	if _, err := p.Printf("%d ducks in a row\n", 4331); err != nil {
+		t.Fatalf(`fail to call p.Printf("%d ducks in a row\n", 4331)`, err)
+	} // Prints 4,331 ducks in a row
 
 	p = message.NewPrinter(message.MatchLanguage("de"))
-	p.Printf("Hoogte: %.1f meter\n", 1244.9) // Prints Hoogte: 1,244.9 meter
+	if _, err := p.Printf("Hoogte: %.1f meter\n", 1244.9); err != nil {
+		t.Fatalf(`"Hoogte: %.1f meter\n", 1244.9)`, err)
+	} // Prints Hoogte: 1,244.9 meter
 
 	p = message.NewPrinter(message.MatchLanguage("ja"))
-	p.Println(123456.78) // Prints 123,456.78
+	if _, err := p.Println(123456.78); err != nil {
+		t.Fatalf("fail to call p.Println(123456.78) %v", err)
+	} // Prints 123,456.78
 
 	//この方法はカンマが表示されない
 	//p = message.NewPrinter(language.Japanese)

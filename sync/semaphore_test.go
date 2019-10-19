@@ -25,7 +25,9 @@ func TestSemaphore(t *testing.T) {
 	var w sync.WaitGroup
 	for i := 0; i < 100; i++ {
 		w.Add(1)
-		s.Acquire(context.Background(), Weight)
+		if err := s.Acquire(context.Background(), Weight); err != nil {
+			fmt.Printf("fail to call sem.Acquire() %v\n", err)
+		}
 		go func(idx int) {
 			doSomething(idx)
 			s.Release(Weight)

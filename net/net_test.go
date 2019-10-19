@@ -25,7 +25,6 @@ func TestHTML(t *testing.T) {
 			fmt.Println(token.TagName())
 		case html.EndTagToken:
 			fmt.Println(token.TagName())
-			break
 		case html.SelfClosingTagToken:
 		case html.CommentToken:
 		case html.DoctypeToken:

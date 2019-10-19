@@ -30,8 +30,6 @@ func TestErrorGroup(t *testing.T) {
 		resp, err := http.Get(url)
 		if err == nil {
 			resp.Body.Close()
-		} else {
-			fmt.Printf("url: %s, error: %v\n", url, err)
 		}
 		return err
 	}
@@ -40,7 +38,9 @@ func TestErrorGroup(t *testing.T) {
 		defer tm.Track(time.Now(), "run without errgroup")
 		for _, url := range urls {
 			// Fetch the URL.
-			fn(url)
+			if err := fn(url); err != nil {
+				fmt.Printf("fail to call http.Get() url: %s, error: %v\n", url, err)
+			}
 		}
 	}()
 
